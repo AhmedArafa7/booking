@@ -32,19 +32,11 @@
           <div class="grid grid-cols-2 gap-space-sm">
             <div>
               <label class="block text-xs font-medium text-on-surface-variant mb-1.5">المحافظة</label>
-              <select [(ngModel)]="selectedRegion" name="region" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer">
-                <option value="منطقة الرياض">منطقة الرياض</option>
-                <option value="مكة المكرمة">مكة المكرمة</option>
-                <option value="المنطقة الشرقية">المنطقة الشرقية</option>
-              </select>
+              <input type="text" [(ngModel)]="selectedRegion" name="region" placeholder="أدخل المحافظة" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-on-surface-variant/50">
             </div>
             <div>
               <label class="block text-xs font-medium text-on-surface-variant mb-1.5">المدينة</label>
-              <select [(ngModel)]="selectedCity" name="city" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer">
-                <option value="الرياض">الرياض</option>
-                <option value="جدة">جدة</option>
-                <option value="الدمام">الدمام</option>
-              </select>
+              <input type="text" [(ngModel)]="selectedCity" name="city" placeholder="أدخل المدينة" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-on-surface-variant/50">
             </div>
           </div>
           <div>
