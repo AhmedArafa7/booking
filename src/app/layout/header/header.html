@@ -1,0 +1,105 @@
+<header class="flex justify-between items-center w-full px-container-margin h-16 sticky top-0 z-50 shadow-sm bg-surface-container-lowest border-b border-surface-container-high">
+  <div class="flex items-center gap-space-lg">
+    <!-- Header title/logo for mobile only -->
+    <div class="flex md:hidden items-center gap-space-sm text-xl font-bold text-primary">
+      <img alt="LibrisERP Logo" class="w-8 h-8 rounded-full bg-surface-container-low" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpSqjlWX8pBus-30zKX8hjz9acirNBBzX0cXcjRhUK9pTBJyR89KBvCWGS9dcvKLDF-L-7ySjbdSgQK7i4OdKBGwCsHwSqxe_puCberNBNXYRoaqhwnx6SwNVwpSQinZMEeoBoRTI_XO2y_x_fI9tSWMMFR4pGj63CTqDya0mKX6qjIhIRIqnwjZtH2e-w-B0vHlb8hl-UcbGRak9JxyTuC6ZyLszQB_znPIozypdoqTiZ4T7OCpuZgn2lGWG9uy3RRT-2XYs1Pzqu">
+      <span>LibrisERP</span>
+    </div>
+    <!-- Desktop Header Greeting -->
+    <div class="hidden md:block text-sm text-on-surface-variant font-medium">
+      أهلاً بك في نظام LibrisERP لإدارة المخازن
+    </div>
+  </div>
+  <div class="flex items-center gap-space-md text-on-surface-variant">
+    <button (click)="openSettings()" class="p-2 rounded-full hover:bg-surface-container transition-colors active:scale-95 duration-150" title="الإعدادات">
+      <span class="material-symbols-outlined">settings</span>
+    </button>
+    <button (click)="authService.logout()" class="p-2 rounded-full text-error hover:bg-error/10 transition-colors active:scale-95 duration-150" title="تسجيل الخروج">
+      <span class="material-symbols-outlined">logout</span>
+    </button>
+  </div>
+</header>
+
+<!-- Settings Modal -->
+<div *ngIf="isSettingsOpen" class="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 p-4">
+  <div class="bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-sm max-h-[90vh] flex flex-col">
+    <div class="flex justify-between items-center p-4 border-b border-surface-container-high shrink-0">
+      <h2 class="text-lg font-bold text-primary flex items-center gap-2">
+        <span class="material-symbols-outlined">settings</span> الإعدادات
+      </h2>
+      <button (click)="closeSettings()" class="text-on-surface-variant hover:text-error transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="p-5 space-y-4 text-on-surface flex-1 overflow-y-auto custom-scrollbar">
+      <p class="text-sm text-on-surface-variant">تخصيص الواجهة حسب تفضيلاتك.</p>
+      
+      <!-- TODO: Uncomment when view mode feature is fully complete
+      <div class="flex items-center justify-between p-3 bg-surface-container-low rounded-lg border border-surface-container-high">
+        <div class="font-medium text-sm">وضع العرض</div>
+        <a *ngIf="!isSinglePageMode" routerLink="/single-page" (click)="closeSettings()" class="text-xs px-3 py-1.5 bg-primary text-on-primary rounded-md flex items-center gap-1 hover:bg-primary-container transition-colors shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">web</span> الصفحة الواحدة
+        </a>
+        <a *ngIf="isSinglePageMode" routerLink="/dashboard" (click)="closeSettings()" class="text-xs px-3 py-1.5 bg-primary text-on-primary rounded-md flex items-center gap-1 hover:bg-primary-container transition-colors shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">dashboard</span> وضع الصفحات
+        </a>
+      </div>
+      -->
+
+      <div class="flex items-center justify-between p-3 bg-surface-container-low rounded-lg border border-surface-container-high">
+        <div class="font-medium text-sm">الوضع المظلم</div>
+        <button (click)="themeService.toggleDarkMode()" [ngClass]="themeService.isDarkMode() ? 'bg-primary' : 'bg-surface-variant'" class="w-10 h-5 rounded-full relative transition-colors shadow-inner">
+          <div class="w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all shadow-sm" [ngClass]="themeService.isDarkMode() ? 'left-0.5' : 'right-0.5'"></div>
+        </button>
+      </div>
+      <div class="pt-2 mt-2 border-t border-surface-container-high">
+        <div class="font-bold text-sm text-primary mb-3">إعدادات الطباعة</div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-[10px] text-on-surface-variant mb-1">اسم المؤسسة (العلامة التجارية)</label>
+            <input type="text" [(ngModel)]="editPrintSettings.brandName" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
+          </div>
+          <div>
+            <label class="block text-[10px] text-on-surface-variant mb-1">بيانات التواصل (الإدارة والهواتف)</label>
+            <input type="text" [(ngModel)]="editPrintSettings.phones" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
+          </div>
+          <div class="flex gap-2">
+            <div class="flex-1">
+              <label class="block text-[10px] text-on-surface-variant mb-1">العملة الأساسية (مثال: R.O. أو ج.م)</label>
+              <input type="text" [(ngModel)]="editPrintSettings.mainCurrency" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
+            </div>
+            <div class="flex-1">
+              <label class="block text-[10px] text-on-surface-variant mb-1">العملة الفرعية (مثال: Bz أو قرش)</label>
+              <input type="text" [(ngModel)]="editPrintSettings.subCurrency" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 mt-2 border-t border-surface-container-high">
+        <div class="font-bold text-sm text-primary mb-3">ترتيب الأقسام</div>
+        <div class="space-y-2">
+          <div *ngFor="let section of filteredEditSectionOrder; let i = index" class="flex justify-between items-center p-2 bg-surface-container-low border border-surface-container-high rounded text-sm font-medium text-text-heading shadow-sm">
+            <span>{{ getSectionName(section) }}</span>
+            <div class="flex items-center gap-1">
+              <button (click)="moveUp(section)" [disabled]="i === 0" class="p-1 rounded text-on-surface-variant hover:bg-surface-variant disabled:opacity-30 transition-colors">
+                <span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+              </button>
+              <button (click)="moveDown(section)" [disabled]="i === filteredEditSectionOrder.length - 1" class="p-1 rounded text-on-surface-variant hover:bg-surface-variant disabled:opacity-30 transition-colors">
+                <span class="material-symbols-outlined text-[16px]">arrow_downward</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="p-4 border-t border-surface-container-high bg-surface-container-low rounded-b-xl flex justify-end gap-2 shrink-0">
+      <button (click)="closeSettings()" class="px-4 py-2 border border-outline-variant rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors">
+        إلغاء
+      </button>
+      <button (click)="savePrintSettings()" class="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:bg-primary-container transition-colors shadow-sm">
+        حفظ الإعدادات
+      </button>
+    </div>
+  </div>
+</div>
