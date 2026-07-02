@@ -54,7 +54,6 @@ export class InvoicesComponent {
   }
 
   librariesData = signal<Library[]>([]);
-  libraries = computed(() => this.librariesData().map(l => l.name));
   
   isFormCollapsed = signal(localStorage.getItem('inv_formCollapsed') === 'true');
   toggleForm() {
@@ -143,7 +142,19 @@ export class InvoicesComponent {
   });
 
   citiesList = computed(() => {
-    return Array.from(new Set(this.librariesData().map(l => l.city).filter(c => !!c)));
+    let libs = this.librariesData();
+    const reg = this.selectedRegion();
+    if (reg) libs = libs.filter(l => l.region === reg);
+    return Array.from(new Set(libs.map(l => l.city).filter(c => !!c)));
+  });
+
+  libraries = computed(() => {
+    let libs = this.librariesData();
+    const reg = this.selectedRegion();
+    if (reg) libs = libs.filter(l => l.region === reg);
+    const city = this.selectedCity();
+    if (city) libs = libs.filter(l => l.city === city);
+    return libs.map(l => l.name);
   });
 
   termsList = computed(() => {
