@@ -80,16 +80,7 @@ export class LibrariesComponent {
 
   constructor() {
     this.libraryService.libraries$.subscribe(items => {
-      if (items.length === 0) {
-        const defaultLibraries: Library[] = [
-          { id: '1', name: 'مكتبة جرير - العليا', region: 'منطقة الرياض', city: 'الرياض', status: 'نشط', workingHours: '08:00 - 23:00' },
-          { id: '2', name: 'مكتبة العبيكان', region: 'مكة المكرمة', city: 'جدة', status: 'نشط', workingHours: '09:00 - 22:00' }
-        ];
-        this.librariesList.set(defaultLibraries);
-        localStorage.setItem('libraries', JSON.stringify(defaultLibraries));
-      } else {
-        this.librariesList.set(items);
-      }
+      this.librariesList.set(items);
       this.cdr.detectChanges();
     });
   }

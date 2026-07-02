@@ -19,7 +19,7 @@
 </div>
 
 <!-- Global Toasts Container -->
-<div class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none w-full max-w-sm px-4">
+<div class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none w-full max-w-sm px-4 print:hidden">
   <div *ngFor="let toast of toastService.toasts()" 
        class="pointer-events-auto flex items-center justify-between p-4 rounded-lg shadow-lg border animate-in fade-in slide-in-from-top-4"
        [ngClass]="{

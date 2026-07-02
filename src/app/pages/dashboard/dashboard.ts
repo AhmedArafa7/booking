@@ -52,15 +52,8 @@ export class DashboardComponent {
   );
 
   // Base historical data to mix with real data
-  private baseHistoricalData = [
-    { year: 2025, term: 'الأول', library: 'متوقع', orderedQty: 2000, refundedQty: 0, priceMultiplier: 35, librariesCount: 5, refundedLibCount: 0 },
-    { year: 2024, term: 'الأول', library: 'مكتبة جرير - الرياض', orderedQty: 7700, refundedQty: 105, priceMultiplier: 35, librariesCount: 15, refundedLibCount: 2 },
-    { year: 2024, term: 'الثاني', library: 'مكتبة جرير - الرياض', orderedQty: 7700, refundedQty: 105, priceMultiplier: 35, librariesCount: 14, refundedLibCount: 1 },
-    { year: 2023, term: 'الأول', library: 'مكتبة العبيكان', orderedQty: 6425, refundedQty: 72, priceMultiplier: 40, librariesCount: 12, refundedLibCount: 3 },
-    { year: 2023, term: 'الثاني', library: 'مكتبة العبيكان', orderedQty: 6425, refundedQty: 73, priceMultiplier: 40, librariesCount: 12, refundedLibCount: 3 },
-    { year: 2022, term: 'الأول', library: 'مكتبة الصفاء', orderedQty: 3000, refundedQty: 50, priceMultiplier: 30, librariesCount: 8, refundedLibCount: 1 },
-    { year: 2022, term: 'الثاني', library: 'مكتبة الصفاء', orderedQty: 3200, refundedQty: 45, priceMultiplier: 30, librariesCount: 8, refundedLibCount: 1 }
-  ];
+  private baseHistoricalData: any[] = [];
+
 
   tableData = computed(() => {
     const mode = this.selectedViewMode();
