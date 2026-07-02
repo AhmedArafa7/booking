@@ -14,6 +14,7 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class HeaderComponent {
   isSettingsOpen = false;
+  isHelpOpen = false;
   themeService = inject(ThemeService);
   settingsService = inject(SettingsService);
   authService = inject(AuthService);
@@ -24,6 +25,14 @@ export class HeaderComponent {
 
   get isSinglePageMode(): boolean {
     return this.router.url === '/single-page';
+  }
+
+  openHelp() {
+    this.isHelpOpen = true;
+  }
+
+  closeHelp() {
+    this.isHelpOpen = false;
   }
 
   openSettings() {
@@ -43,7 +52,7 @@ export class HeaderComponent {
     const names: Record<string, string> = {
       'lib-form': 'إضافة مكتبة',
       'lib-list': 'قائمة المكتبات',
-      'inv-form': isMerged ? 'الفواتير والطلبات' : 'تسجيل الفاتورة',
+      'inv-form': isMerged ? 'الفواتير والطلبات' : 'العمليات',
       'inv-list': 'الفواتير المسجلة',
       'inventory': 'المخزون',
       'dashboard': 'تحليل التقدم'

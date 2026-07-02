@@ -408,8 +408,26 @@ export class InvoicesComponent {
     this.printInvoice(invoice);
   }
 
-  saveInvoice() {
-    this.executeTransaction('order');
+  processInventoryAdd() {
+    const itemsToProcess = this.draftItems().filter(i => (i.quantity || 0) > 0);
+    
+    if (itemsToProcess.length === 0) {
+      this.toast.show('الرجاء إدخال كميات لبعض المواد على الأقل لإضافتها للمخزن', 'error');
+      return;
+    }
+
+    // Process Inventory Addition
+    for (const item of itemsToProcess) {
+      const invItem = this.inventoryService.getItemById(item.id!);
+      if (invItem) {
+        invItem.quantity += (item.quantity || 0);
+        this.inventoryService.updateInventoryItem(invItem);
+        this.activityService.logActivity('إضافة للمخزون', `تم إضافة كمية ${item.quantity} لكتاب ${item.name}`, 'ADD');
+      }
+    }
+
+    this.draftItems.update(items => items.map(i => ({ ...i, quantity: null, total: null })));
+    this.toast.show('تمت إضافة الكميات للمخزون بنجاح!', 'success');
   }
 
   processOrder() {

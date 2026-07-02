@@ -24,7 +24,14 @@ export class SettingsService {
 
   private readonly ORDER_KEY = 'sectionOrder';
 
-  private defaultOrder: string[] = ['dashboard', 'inv-form', 'inv-list', 'lib-form', 'lib-list', 'inventory'];
+  private defaultOrder = [
+    'inv-form', 
+    'inv-list', 
+    'lib-form', 
+    'dashboard', 
+    'lib-list', 
+    'inventory'
+  ];
   sectionOrder = signal<string[]>(this.loadOrder());
 
   private loadSettings(): PrintSettings {

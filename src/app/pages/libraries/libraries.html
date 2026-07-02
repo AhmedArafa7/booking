@@ -47,9 +47,15 @@
             <label class="block text-xs font-medium text-on-surface-variant mb-1.5">اسم صاحب المكتبة</label>
             <input [(ngModel)]="ownerName" name="owner" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" type="text" placeholder="الفاضل / ...">
           </div>
-          <div>
-            <label class="block text-xs font-medium text-on-surface-variant mb-1.5">ساعات العمل</label>
-            <input [(ngModel)]="workingHours" name="hours" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="08:00 - 22:00" type="text">
+          <div class="grid grid-cols-2 gap-space-sm">
+            <div>
+              <label class="block text-xs font-medium text-on-surface-variant mb-1.5">وقت الفتح</label>
+              <input [(ngModel)]="workingHoursStart" name="hoursStart" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" type="time">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-on-surface-variant mb-1.5">وقت الإغلاق</label>
+              <input [(ngModel)]="workingHoursEnd" name="hoursEnd" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" type="time">
+            </div>
           </div>
           <button type="submit" class="w-full mt-2 bg-primary text-on-primary text-sm font-medium py-2.5 rounded-lg hover:bg-primary-container shadow-sm transition-colors flex items-center justify-center gap-2">
             <span class="material-symbols-outlined text-[20px]">add_circle</span> حفظ المكتبة
@@ -186,7 +192,7 @@
       إدارة المبيعات: هاتف: 98877925 - 91913020
     </div>
     <div class="absolute right-0 top-6 text-[#4a148c] font-bold text-[16px]">
-      Log in
+      سلسلة تدريبات كامبريدج في الفيزياء
     </div>
     <h1 class="text-2xl font-bold text-[#d32f2f] mb-8">فاتورة رقم (1)</h1>
   </div>

@@ -76,7 +76,8 @@ export class LibrariesComponent {
   ownerName = '';
   selectedRegion = 'منطقة الرياض';
   selectedCity = 'الرياض';
-  workingHours = '08:00 - 22:00';
+  workingHoursStart = '08:00';
+  workingHoursEnd = '22:00';
 
   constructor() {
     this.libraryService.libraries$.subscribe(items => {
@@ -323,7 +324,7 @@ export class LibrariesComponent {
       region: this.selectedRegion,
       city: this.selectedCity,
       status: 'نشط',
-      workingHours: this.workingHours,
+      workingHours: `${this.workingHoursStart} - ${this.workingHoursEnd}`,
       logo: this.selectedLogoData || undefined,
       ownerName: this.ownerName
     };
