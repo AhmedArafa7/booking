@@ -64,7 +64,7 @@
             <td class="p-3.5 font-medium">{{ item.subject }}</td>
             <td class="p-3.5">{{ item.grade }}</td>
             <td class="p-3.5">{{ item.term }}</td>
-            <td class="p-3.5 text-left font-mono">{{ item.price | number:'1.3-3' }}</td>
+            <td class="p-3.5 text-left font-mono">{{ item.price | number:'1.2-2' }}</td>
             <td class="p-3.5 text-left font-mono">
               <span *ngIf="!item.lowStock" class="font-medium text-on-surface">{{ item.quantity | number }}</span>
               <span *ngIf="item.lowStock" class="text-error font-bold flex items-center justify-end gap-1" title="مخزون منخفض">

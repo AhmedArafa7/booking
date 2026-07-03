@@ -49,7 +49,7 @@ export class InvoicesComponent {
 
   getDecimalPart(val: number): number | string {
     if (!val) return '-';
-    const dec = Math.round((val % 1) * 1000);
+    const dec = Math.round((val % 1) * 100);
     return dec > 0 ? dec : '-';
   }
 
@@ -171,9 +171,9 @@ export class InvoicesComponent {
            this.filterTerm() !== '' || 
            this.filterGrade() !== '' || 
            this.filterBook() !== '' ||
-           (this.isMerged() ? this.selectedRegion() !== '' : this.filterRegion() !== '') ||
-           (this.isMerged() ? this.selectedCity() !== '' : this.filterCity() !== '') ||
-           (this.isMerged() ? this.selectedLibrary() !== '' : this.filterLibrary() !== '');
+           (this.isMerged() ? false : this.filterRegion() !== '') ||
+           (this.isMerged() ? false : this.filterCity() !== '') ||
+           (this.isMerged() ? false : this.filterLibrary() !== '');
   });
 
   isForceShowButtonVisible = signal<boolean>(JSON.parse(localStorage.getItem('inv_force_show_btn') || 'false'));
@@ -378,13 +378,14 @@ export class InvoicesComponent {
     // Fetch old book for undo purposes
     const oldBook = this.inventoryService.getItemById(draft.id!);
     
+    const existingItem = this.inventoryService.getItemById(draft.id!);
     const newBook = {
       id: draft.id!,
       subject: draft.name,
       grade: draft.grade || '',
       term: draft.term || this.settingsService.getCurrentTerm(),
       price: draft.price || 0,
-      quantity: 100 // default or keep existing
+      quantity: existingItem ? existingItem.quantity : 0
     };
 
     // Update Inventory
@@ -415,7 +416,7 @@ export class InvoicesComponent {
       grade: 'الصف غير محدد',
       term: this.settingsService.getCurrentTerm(),
       price: 0,
-      quantity: 100
+      quantity: 0
     };
     this.inventoryService.addInventoryItem(newBook);
     this.activityService.logActivity('إضافة كتاب جديد', `تمت إضافة كتاب جديد: كتاب جديد`, 'ADD', { book: newBook });
@@ -530,6 +531,12 @@ export class InvoicesComponent {
   }
 
   processInventoryAdd() {
+    const invalidItems = this.draftItems().filter(i => (i.quantity || 0) < 0);
+    if (invalidItems.length > 0) {
+      this.toast.show('لا يمكن إدخال كميات سالبة', 'error');
+      return;
+    }
+
     const itemsToProcess = this.draftItems().filter(i => (i.quantity || 0) > 0);
     
     if (itemsToProcess.length === 0) {
@@ -541,9 +548,10 @@ export class InvoicesComponent {
     for (const item of itemsToProcess) {
       const invItem = this.inventoryService.getItemById(item.id!);
       if (invItem) {
+        const oldQty = invItem.quantity;
         invItem.quantity += (item.quantity || 0);
         this.inventoryService.updateInventoryItem(invItem);
-        this.activityService.logActivity('إضافة للمخزون', `تم إضافة كمية ${item.quantity} لكتاب ${item.name}`, 'ADD');
+        this.activityService.logActivity('إضافة للمخزون', `تم إضافة كمية ${item.quantity} لكتاب ${item.name}`, 'UPDATE', { entity: 'inventory', oldBook: { ...invItem, quantity: oldQty }, newBook: { ...invItem } });
       }
     }
 

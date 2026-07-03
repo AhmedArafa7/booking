@@ -3,7 +3,7 @@ import { AsyncPipe, CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { InventoryService } from '../../core/services/inventory.service';
-import { InvoicesService } from '../../core/services/invoices.service';
+import { InvoiceService } from '../../core/services/invoice.service';
 import { LibraryService } from '../../core/services/library.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { Invoice } from '../../core/models/invoice.model';
@@ -18,7 +18,7 @@ export class DashboardComponent {
   @Input() isCompact = false;
 
   private inventoryService = inject(InventoryService);
-  private invoicesService = inject(InvoicesService);
+  private invoicesService = inject(InvoiceService);
   private libraryService = inject(LibraryService);
   public settingsService = inject(SettingsService);
 
@@ -40,7 +40,7 @@ export class DashboardComponent {
 
   // Convert Observables to Signals
   private inventory = toSignal(this.inventoryService.inventory$, { initialValue: [] });
-  private invoices = toSignal(this.invoicesService.invoices$, { initialValue: [] });
+  private invoices = this.invoicesService.invoices$;
   private libraries = toSignal(this.libraryService.libraries$, { initialValue: [] });
 
   toggleAnalysis() {
