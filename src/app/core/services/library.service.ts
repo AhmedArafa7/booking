@@ -28,6 +28,46 @@ export class LibraryService {
     localStorage.setItem(this.storageKey, JSON.stringify(data));
   }
 
+  addLibrary(lib: Library) {
+    const current = this.librariesSubject.value;
+    const updated = [...current, lib];
+    this.saveToStorage(updated);
+    this.librariesSubject.next(updated);
+  }
+
+  deleteLibrary(id: string) {
+    const current = this.librariesSubject.value;
+    const updated = current.filter(l => l.id !== id);
+    this.saveToStorage(updated);
+    this.librariesSubject.next(updated);
+  }
+
+  executeCompensation(activity: import('../models/activity.model').Activity) {
+    if (!activity.type || !activity.payload) return;
+    
+    switch (activity.type) {
+      case 'ADD':
+        this.deleteLibrary(activity.payload.library.id);
+        break;
+      case 'DELETE':
+        this.addLibrary(activity.payload.library);
+        break;
+    }
+  }
+
+  executeRedo(activity: import('../models/activity.model').Activity) {
+    if (!activity.type || !activity.payload) return;
+    
+    switch (activity.type) {
+      case 'ADD':
+        this.addLibrary(activity.payload.library);
+        break;
+      case 'DELETE':
+        this.deleteLibrary(activity.payload.library.id);
+        break;
+    }
+  }
+
   fetchLibraries(): void {
     this.http.get<Library[]>(this.apiUrl).pipe(
       tap(data => {

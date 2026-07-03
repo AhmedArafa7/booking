@@ -11,7 +11,7 @@ import { Invoice } from '../../core/models/invoice.model';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, DecimalPipe],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.html'
 })
 export class DashboardComponent {
@@ -24,6 +24,19 @@ export class DashboardComponent {
 
   isAnalysisCollapsed = signal(localStorage.getItem('dash_analysisCollapsed') === 'true');
   isDemoMode = signal(false); // Demo Mode Toggle
+  isClassicMode = signal(localStorage.getItem('dash_classicMode') !== 'false'); // Default to true based on user request
+  classicDisplayMode = signal<'libraries' | 'revenue' | 'quantity'>('libraries');
+  dashboardTerm = signal<string>(this.settingsService.getCurrentTerm());
+
+  onDashboardTermChange(term: string) {
+    this.dashboardTerm.set(term);
+  }
+
+  toggleClassicMode(event: Event) {
+    event.stopPropagation();
+    this.isClassicMode.set(!this.isClassicMode());
+    localStorage.setItem('dash_classicMode', String(this.isClassicMode()));
+  }
 
   // Convert Observables to Signals
   private inventory = toSignal(this.inventoryService.inventory$, { initialValue: [] });
@@ -70,9 +83,14 @@ export class DashboardComponent {
     let totalItemsSold = 0;
 
     invs.forEach(inv => {
-      const invTotal = inv.items.reduce((sum, item) => sum + (item.total || 0), 0);
-      const invQty = inv.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-      
+      let invTotal = 0;
+      let invQty = 0;
+      inv.items.forEach(item => {
+        if (item.term && item.term !== this.dashboardTerm()) return;
+        invTotal += (item.total || 0);
+        invQty += (item.quantity || 0);
+      });
+
       if (inv.type === 'order') {
         totalRevenue += invTotal;
         totalItemsSold += invQty;
@@ -80,13 +98,14 @@ export class DashboardComponent {
         totalRevenue -= invTotal;
         totalItemsSold -= invQty;
       }
-
     });
+
+    const termInvt = invt.filter((item: any) => !item.term || item.term === this.dashboardTerm());
 
     return {
       totalLibraries: libs.length,
-      totalItems: invt.reduce((sum: any, item: any) => sum + (item.quantity || 0), 0),
-      lowStockCount: invt.filter((item: any) => (item.quantity || 0) < 150).length,
+      totalItems: termInvt.reduce((sum: any, item: any) => sum + (item.quantity || 0), 0),
+      lowStockCount: termInvt.filter((item: any) => (item.quantity || 0) < 150).length,
       totalInvoices: invs.length,
       totalRevenue,
       totalCollected,
@@ -104,7 +123,11 @@ export class DashboardComponent {
       if (!libMap.has(inv.libraryName)) libMap.set(inv.libraryName, { ordered: 0, refunded: 0, cleared: 0, balance: 0 });
       
       const stats = libMap.get(inv.libraryName)!;
-      const invTotal = inv.items.reduce((sum, item) => sum + (item.total || 0), 0);
+      let invTotal = 0;
+      inv.items.forEach(item => {
+        if (item.term && item.term !== this.dashboardTerm()) return;
+        invTotal += (item.total || 0);
+      });
       
       if (inv.type === 'order') stats.ordered += invTotal;
       else if (inv.type === 'refund') stats.refunded += invTotal;
@@ -130,14 +153,14 @@ export class DashboardComponent {
     invs.forEach(inv => {
       if (inv.type === 'order') {
         inv.items.forEach(item => {
-          if (item.id) {
-            demandMap.set(item.id, (demandMap.get(item.id) || 0) + (item.quantity || 0));
-          }
+          if (item.term && item.term !== this.dashboardTerm()) return;
+          demandMap.set(item.id!, (demandMap.get(item.id!) || 0) + (item.quantity || 0));
         });
       }
     });
 
     return invt
+      .filter((item: any) => (!item.term || item.term === this.dashboardTerm())) // Only current term books
       .filter((item: any) => (item.quantity || 0) < 200) // Less than 200 in stock
       .map((item: any) => ({
         name: item.subject,
@@ -207,4 +230,129 @@ export class DashboardComponent {
       hasData: bars.length > 0
     };
   });
+
+  // --- Classic Analytics Mode Data ---
+  
+  classicChartData = computed(() => {
+    const invs = this.activeInvoices();
+    const mode = this.classicDisplayMode();
+    const yearMap = new Map<number, number | Set<string>>();
+
+    invs.forEach(inv => {
+      const year = new Date(inv.date || new Date()).getFullYear();
+      
+      if (mode === 'libraries') {
+        if (!yearMap.has(year)) yearMap.set(year, new Set<string>());
+        (yearMap.get(year) as Set<string>).add(inv.libraryName || 'غير محدد');
+      } else {
+        let val = 0;
+        inv.items.forEach(item => {
+          if (mode === 'revenue') {
+            if (inv.type === 'order') val += (item.total || 0);
+            if (inv.type === 'refund') val -= (item.total || 0);
+          } else if (mode === 'quantity') {
+            if (inv.type === 'order') val += (item.quantity || 0);
+            if (inv.type === 'refund') val -= (item.quantity || 0);
+          }
+        });
+        yearMap.set(year, (yearMap.get(year) as number || 0) + val);
+      }
+    });
+
+    // Ensure we have some base years to look like the image if empty
+    const currentYear = new Date().getFullYear();
+    [currentYear - 2, currentYear - 1, currentYear, currentYear + 1].forEach(y => {
+      if (!yearMap.has(y)) {
+        yearMap.set(y, mode === 'libraries' ? new Set<string>() : 0);
+      }
+    });
+
+    const data = Array.from(yearMap.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([year, value]) => {
+        const val = mode === 'libraries' ? (value as Set<string>).size : Math.max((value as number), 0);
+        return { year, value: val };
+      });
+
+    const maxValue = Math.max(...data.map(d => d.value), 1);
+    
+    // Alternating blue colors for the chart as in the screenshot
+    const colors = ['bg-[#C6D2FD]', 'bg-[#3A7CF6]', 'bg-[#002060]'];
+
+    const bars = data.map((d, index) => ({
+      year: d.year,
+      value: d.value,
+      heightPercent: Math.max((d.value / maxValue) * 90, 5),
+      colorClass: colors[index % colors.length]
+    }));
+
+    return {
+      bars,
+      hasData: true // We always show base years
+    };
+  });
+
+  classicTableData = computed(() => {
+    const invs = this.activeInvoices();
+    const mode = this.classicDisplayMode();
+    
+    // Group by Year and Term
+    const groupMap = new Map<string, { year: number, term: string, ordered: number, refunded: number, net: number, libSales: Map<string, number> }>();
+
+    invs.forEach(inv => {
+      const year = new Date(inv.date || new Date()).getFullYear();
+      
+      inv.items.forEach(item => {
+        const term = (item.term || 'الأول').trim();
+        const key = `${year}-${term}`;
+        
+        if (!groupMap.has(key)) {
+          groupMap.set(key, { year, term, ordered: 0, refunded: 0, net: 0, libSales: new Map() });
+        }
+        
+        const group = groupMap.get(key)!;
+        const libName = inv.libraryName || 'غير محدد';
+        const qty = item.quantity || 0;
+        const total = item.total || 0;
+
+        // Metric for "Best Library"
+        const metric = mode === 'revenue' ? total : qty;
+
+        if (inv.type === 'order') {
+          group.ordered += qty;
+          group.net += total;
+          group.libSales.set(libName, (group.libSales.get(libName) || 0) + metric);
+        } else if (inv.type === 'refund') {
+          group.refunded += qty;
+          group.net -= total;
+          group.libSales.set(libName, (group.libSales.get(libName) || 0) - metric);
+        }
+      });
+    });
+
+    const rows = Array.from(groupMap.values()).map(g => {
+      // Find best selling library for this term
+      let bestLib = '-';
+      let maxVal = -1;
+      g.libSales.forEach((val, lib) => {
+        if (val > maxVal) {
+          maxVal = val;
+          bestLib = lib;
+        }
+      });
+
+      return {
+        year: g.year,
+        term: g.term,
+        bestLibrary: bestLib,
+        ordered: g.ordered,
+        refunded: g.refunded,
+        netSales: g.net
+      };
+    });
+
+    // Sort descending by year then term
+    return rows.sort((a, b) => b.year - a.year || b.term.localeCompare(a.term));
+  });
+
 }

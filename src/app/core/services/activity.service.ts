@@ -1,6 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Activity } from '../models/activity.model';
 import { InventoryService } from './inventory.service';
+import { LibraryService } from './library.service';
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +11,7 @@ export class ActivityService {
   public readonly activities$ = this.activitiesSignal.asReadonly();
   private readonly storageKey = 'activity_log';
   private inventoryService = inject(InventoryService);
+  private libraryService = inject(LibraryService);
 
   constructor() {
     this.loadActivities(); 
@@ -50,7 +52,11 @@ export class ActivityService {
       
       // Execute compensation
       if (activity.type && activity.payload) {
-        this.inventoryService.executeCompensation(activity);
+        if (activity.payload.entity === 'library') {
+          this.libraryService.executeCompensation(activity);
+        } else {
+          this.inventoryService.executeCompensation(activity);
+        }
       }
 
       // Update status
@@ -69,7 +75,11 @@ export class ActivityService {
       
       // Execute redo
       if (activity.type && activity.payload) {
-        this.inventoryService.executeRedo(activity);
+        if (activity.payload.entity === 'library') {
+          this.libraryService.executeRedo(activity);
+        } else {
+          this.inventoryService.executeRedo(activity);
+        }
       }
 
       // Update status

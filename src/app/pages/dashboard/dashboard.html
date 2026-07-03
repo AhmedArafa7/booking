@@ -11,6 +11,14 @@
       </h2>
       <p class="text-sm text-on-surface-variant mt-1">مؤشرات الأداء الرئيسية والتحليلات الذكية لعملك</p>
     </div>
+    
+    <div class="flex items-center gap-3 bg-surface-container-low p-1.5 rounded-lg border border-outline-variant">
+      <span class="text-sm font-medium text-on-surface-variant px-2">الترم المالي:</span>
+      <select [ngModel]="dashboardTerm()" (ngModelChange)="onDashboardTermChange($event)" class="bg-surface-primary border-none rounded py-1 px-3 text-sm font-bold text-primary focus:outline-none cursor-pointer">
+        <option value="الأول">الترم الأول</option>
+        <option value="الثاني">الترم الثاني</option>
+      </select>
+    </div>
   </div>
 
   <!-- Stats Grid -->
@@ -70,8 +78,14 @@
         <div class="mb-space-md pb-4 flex justify-between items-center cursor-pointer select-none border-b border-surface-container-high" (click)="toggleAnalysis()">
           <div class="flex items-center gap-3">
             <h3 class="text-xl font-semibold text-text-heading flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary">analytics</span> الرؤى والتحليلات الذكية
+              <span class="material-symbols-outlined text-primary">analytics</span> {{ isClassicMode() ? 'تحليل التقدم' : 'الرؤى والتحليلات الذكية' }}
             </h3>
+            
+            <button (click)="toggleClassicMode($event)" class="text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors border border-outline-variant hover:bg-surface-variant text-on-surface-variant">
+              <span class="material-symbols-outlined text-[14px]">swap_horiz</span>
+              {{ isClassicMode() ? 'التبديل للتحليل الذكي' : 'التبديل للتحليل الكلاسيكي' }}
+            </button>
+
             <button *ngIf="isCompact" (click)="toggleDemoMode($event)" class="text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1 transition-colors" [ngClass]="isDemoMode() ? 'bg-primary text-on-primary' : 'bg-surface-container-highest text-on-surface-variant hover:bg-surface-variant'">
               <span class="material-symbols-outlined text-[14px]">{{ isDemoMode() ? 'visibility_off' : 'visibility' }}</span>
               {{ isDemoMode() ? 'إخفاء' : 'عرض تجريبي' }}
@@ -81,6 +95,9 @@
         </div>
 
         <div *ngIf="!isAnalysisCollapsed()" class="animate-in fade-in slide-in-from-top-2 duration-300 space-y-space-lg">
+          
+          <!-- === SMART ANALYTICS MODE === -->
+          <ng-container *ngIf="!isClassicMode()">
           
           <!-- Chart Row -->
           <div class="bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant/30">
@@ -220,7 +237,84 @@
               </div>
             </div>
 
-          </div>
+            </div>
+          </ng-container>
+
+          <!-- === CLASSIC ANALYTICS MODE === -->
+          <ng-container *ngIf="isClassicMode()">
+            
+            <!-- Controls Row -->
+            <div class="flex justify-end items-center mb-4">
+              <div class="flex items-center gap-2">
+                <label class="text-sm text-on-surface-variant">عرض البيانات حسب:</label>
+                <div class="relative">
+                  <select [ngModel]="classicDisplayMode()" (ngModelChange)="classicDisplayMode.set($event)" class="appearance-none bg-surface-container-lowest border border-outline-variant rounded-md pr-3 py-1.5 pl-8 text-sm text-text-heading outline-none focus:border-primary focus:ring-1 focus:ring-primary min-w-[120px]">
+                    <option value="libraries">عدد المكتبات</option>
+                    <option value="revenue">قيمة المبيعات</option>
+                    <option value="quantity">الكميات المباعة</option>
+                  </select>
+                  <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">expand_more</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Classic Chart Row -->
+            <div class="bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant/30 mb-space-lg">
+              <div class="relative h-[250px] w-full flex items-end gap-4 sm:gap-12 px-8 pt-6 pb-8 border-b border-surface-container-high">
+                <!-- X-axis labels (Years) and Bars -->
+                <div *ngFor="let bar of classicChartData().bars" class="relative group flex-1 flex justify-center h-full items-end">
+                  <!-- Bar -->
+                  <div class="w-full max-w-[120px] rounded-t-md transition-all duration-500 ease-out {{ bar.colorClass }}"
+                       [style.height.%]="bar.heightPercent">
+                  </div>
+                  
+                  <!-- Year Label under the line -->
+                  <div class="absolute -bottom-7 text-xs font-bold text-on-surface-variant">
+                    {{ bar.year }}
+                  </div>
+                  
+                  <!-- Tooltip -->
+                  <div class="absolute -top-10 bg-surface-container-highest text-on-surface text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
+                    {{ bar.value | number }} {{ classicDisplayMode() === 'revenue' ? settingsService.printSettings().mainCurrency : (classicDisplayMode() === 'quantity' ? 'كتاب' : 'مكتبة') }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Classic Data Table -->
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm text-right">
+                  <thead class="bg-surface-container-low text-on-surface-variant text-xs">
+                    <tr>
+                      <th class="px-4 py-3 font-medium">السنة</th>
+                      <th class="px-4 py-3 font-medium">الترم</th>
+                      <th class="px-4 py-3 font-medium">المكتبة الأكثر مبيعا</th>
+                      <th class="px-4 py-3 font-medium text-center">الكتب المطلوبة</th>
+                      <th class="px-4 py-3 font-medium text-center">المسترجعة</th>
+                      <th class="px-4 py-3 font-medium text-center">صافي المبيعات</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-surface-container-high text-text-heading">
+                    <tr *ngFor="let row of classicTableData()" class="hover:bg-surface-container-lowest transition-colors">
+                      <td class="px-4 py-3 font-bold">{{ row.year }}</td>
+                      <td class="px-4 py-3">{{ row.term }}</td>
+                      <td class="px-4 py-3 font-medium">{{ row.bestLibrary }}</td>
+                      <td class="px-4 py-3 text-center">{{ row.ordered | number }}</td>
+                      <td class="px-4 py-3 text-center text-error">{{ row.refunded | number }}</td>
+                      <td class="px-4 py-3 text-center font-bold text-success">{{ row.netSales | number }}</td>
+                    </tr>
+                    <tr *ngIf="classicTableData().length === 0">
+                      <td colspan="6" class="px-4 py-8 text-center text-on-surface-variant">
+                        لا توجد بيانات متاحة حالياً
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </ng-container>
 
         </div>
       </div>

@@ -11,7 +11,7 @@ export interface InvoiceItem {
 
 export interface Invoice {
   id?: string;
-  type: 'order' | 'refund';
+  type: 'order' | 'refund' | 'clearance';
   libraryName: string;
   region: string;
   city: string;

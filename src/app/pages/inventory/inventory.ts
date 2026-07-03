@@ -20,7 +20,7 @@ export class InventoryComponent {
   // Filters
   selectedSubject = signal('كل المواد');
   selectedGrade = signal('كل الصفوف');
-  selectedTerm = signal('كل الأترام');
+  selectedTerm = signal(this.settingsService.getCurrentTerm());
 
   isListCollapsed = signal(localStorage.getItem('invnt_listCollapsed') === 'true');
   toggleList() {

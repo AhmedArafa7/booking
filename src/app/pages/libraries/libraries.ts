@@ -1,9 +1,10 @@
-import { Component, computed, signal, inject, ChangeDetectorRef, Input } from '@angular/core';
+import { Component, computed, signal, inject, ChangeDetectorRef, Input, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LibraryService } from '../../core/services/library.service';
 import { InvoiceService } from '../../core/services/invoice.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ActivityService } from '../../core/services/activity.service';
 import { Library } from '../../core/models/library.model';
 import { Invoice } from '../../core/models/invoice.model';
 interface ClearanceSummaryItem {
@@ -34,6 +35,8 @@ export class LibrariesComponent {
   private invoiceService = inject(InvoiceService);
   private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
+  private activityService = inject(ActivityService);
+  private zone = inject(NgZone);
 
   librariesList = signal<Library[]>([]);
   
@@ -61,6 +64,8 @@ export class LibrariesComponent {
   }
 
   isListCollapsed = signal(localStorage.getItem('lib_listCollapsed') === 'true');
+  isListEditMode = signal(false);
+
   toggleList() {
     this.isListCollapsed.set(!this.isListCollapsed());
     localStorage.setItem('lib_listCollapsed', String(this.isListCollapsed()));
@@ -70,12 +75,15 @@ export class LibrariesComponent {
   clearanceItems = signal<{grade: string, items: ClearanceSummaryItem[]}[]>([]);
   clearanceTotal = signal<number>(0);
   clearanceDate = new Date().toLocaleDateString('ar-SA');
+  currentClearanceNumber = signal<number>(1);
+  clearanceTerm = signal<string>(this.settingsService.getCurrentTerm());
+
   Math = Math;
 
   libraryName = '';
   ownerName = '';
-  selectedRegion = 'منطقة الرياض';
-  selectedCity = 'الرياض';
+  selectedRegion = '';
+  selectedCity = '';
   workingHoursStart = '08:00';
   workingHoursEnd = '22:00';
 
@@ -160,8 +168,12 @@ export class LibrariesComponent {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e: any) => {
-        this.editLibLogo = e.target.result;
-        this.cdr.detectChanges();
+        this.zone.run(() => {
+          this.editLibLogo = e.target.result;
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+          this.toast.show('تم تحديد الشعار الجديد بنجاح!', 'success');
+        });
       };
       reader.readAsDataURL(file);
     }
@@ -213,12 +225,44 @@ export class LibrariesComponent {
     this.toast.show('تم تحديث بيانات المكتبة بنجاح!', 'success');
   }
 
+  deleteLibrary() {
+    const lib = this.selectedLibraryForDetails();
+    if (!lib) return;
+    
+    if (confirm(`هل أنت متأكد من حذف المكتبة: ${lib.name}؟ هذا الإجراء سيحذف المكتبة فقط، ولكن فواتيرها ستبقى محفوظة.`)) {
+      this.libraryService.deleteLibrary(lib.id);
+      
+      this.activityService.logActivity('حذف مكتبة', `تم حذف المكتبة: ${lib.name}`, 'DELETE', { entity: 'library', library: lib });
+      this.toast.show('تم حذف المكتبة بنجاح', 'success');
+      this.closeDetails();
+    }
+  }
+
+  deleteLibraryQuick(lib: Library, event: Event) {
+    event.stopPropagation();
+    if (confirm(`هل أنت متأكد من حذف المكتبة: ${lib.name}؟ هذا الإجراء سيحذف المكتبة فقط، ولكن فواتيرها ستبقى محفوظة.`)) {
+      this.libraryService.deleteLibrary(lib.id);
+      
+      this.activityService.logActivity('حذف مكتبة', `تم حذف المكتبة: ${lib.name}`, 'DELETE', { entity: 'library', library: lib });
+      this.toast.show('تم حذف المكتبة بنجاح', 'success');
+    }
+  }
+
   closeDetails() {
     this.isDetailsModalOpen = false;
     this.selectedLibraryForDetails.set(null);
   }
 
+  onClearanceTermChange(term: string) {
+    this.clearanceTerm.set(term);
+    this.clearance(this.clearanceLibrary() || undefined);
+  }
+
   clearance(lib?: Library) {
+    const currentInvoices = this.invoiceService.invoices$();
+    const maxNumber = currentInvoices.reduce((max, inv) => Math.max(max, inv.invoiceNumber || 0), 0);
+    this.currentClearanceNumber.set(maxNumber + 1);
+
     let invoices: Invoice[] = [];
     if (!lib) {
       this.clearanceLibrary.set({ id: 'all', name: 'جميع المكتبات', region: '', city: '', status: '' });
@@ -232,7 +276,11 @@ export class LibrariesComponent {
     const itemMap = new Map<string, ClearanceSummaryItem>();
 
     invoices.forEach(inv => {
+      if (inv.type === 'clearance') return;
+
       inv.items.forEach(item => {
+        if (item.term && item.term !== this.clearanceTerm()) return;
+
         if (!itemMap.has(item.name)) {
           itemMap.set(item.name, {
             id: item.id || 0,
@@ -290,7 +338,52 @@ export class LibrariesComponent {
   }
 
   printClearance() {
-    window.print();
+    const lib = this.clearanceLibrary();
+    let invoice: Invoice | null = null;
+    
+    if (lib) {
+      const items: any[] = [];
+      this.clearanceItems().forEach(group => {
+        group.items.forEach(item => {
+          if (item.netQty !== 0) {
+            items.push({
+              id: item.id,
+              name: item.name,
+              subject: item.subject,
+              grade: item.grade,
+              quantity: item.netQty,
+              price: item.price,
+              total: item.total
+            });
+          }
+        });
+      });
+
+      invoice = {
+        type: 'clearance',
+        libraryName: lib.name,
+        region: lib.region || '',
+        city: lib.city || '',
+        items: items,
+        printStatus: 'pending',
+        invoiceNumber: this.currentClearanceNumber()
+      };
+      this.invoiceService.saveInvoice(invoice);
+    }
+    
+    setTimeout(() => {
+      window.print();
+      
+      if (invoice) {
+        const success = window.confirm('هل تمت الطباعة بنجاح؟');
+        invoice.printStatus = success ? 'printed' : 'failed';
+        this.invoiceService.updateInvoice(invoice);
+      }
+      
+      const currentInvoices = this.invoiceService.invoices$();
+      const maxNumber = currentInvoices.reduce((max, inv) => Math.max(max, inv.invoiceNumber || 0), 0);
+      this.currentClearanceNumber.set(maxNumber + 1);
+    }, 500);
   }
 
   selectedLogoData: string | null = null;
@@ -304,9 +397,12 @@ export class LibrariesComponent {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        this.selectedLogoData = e.target?.result as string;
-        this.cdr.detectChanges();
-        this.toast.show('تم تحديد الشعار بنجاح! سيتم حفظه عند حفظ المكتبة.', 'success');
+        this.zone.run(() => {
+          this.selectedLogoData = e.target?.result as string;
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+          this.toast.show('تم تحديد الشعار بنجاح! سيتم حفظه عند حفظ المكتبة.', 'success');
+        });
       };
       reader.readAsDataURL(file);
     }
@@ -329,10 +425,10 @@ export class LibrariesComponent {
       ownerName: this.ownerName
     };
 
-    const current = this.librariesList();
-    this.librariesList.set([...current, newLib]);
-    localStorage.setItem('libraries', JSON.stringify(this.librariesList()));
+    this.libraryService.addLibrary(newLib);
     
+    this.activityService.logActivity('إضافة مكتبة', `تم إضافة مكتبة جديدة باسم: ${newLib.name}`, 'ADD', { entity: 'library', library: newLib });
+
     this.libraryName = '';
     this.ownerName = '';
     this.selectedLogoData = null;

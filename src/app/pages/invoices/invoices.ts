@@ -76,13 +76,13 @@ export class InvoicesComponent {
   filteredInvoices = computed(() => {
     let list = this.invoicesList();
 
-    const reg = this.selectedRegion();
+    const reg = this.isMerged() ? this.selectedRegion() : this.filterRegion();
     if (reg) list = list.filter(i => i.region === reg);
 
-    const city = this.selectedCity();
+    const city = this.isMerged() ? this.selectedCity() : this.filterCity();
     if (city) list = list.filter(i => i.city === city);
 
-    const lib = this.selectedLibrary();
+    const lib = this.isMerged() ? this.selectedLibrary() : this.filterLibrary();
     if (lib) list = list.filter(i => i.libraryName === lib);
 
     const type = this.filterType();
@@ -170,7 +170,10 @@ export class InvoicesComponent {
            this.filterTime() !== 'all' || 
            this.filterTerm() !== '' || 
            this.filterGrade() !== '' || 
-           this.filterBook() !== '';
+           this.filterBook() !== '' ||
+           (this.isMerged() ? this.selectedRegion() !== '' : this.filterRegion() !== '') ||
+           (this.isMerged() ? this.selectedCity() !== '' : this.filterCity() !== '') ||
+           (this.isMerged() ? this.selectedLibrary() !== '' : this.filterLibrary() !== '');
   });
 
   isForceShowButtonVisible = signal<boolean>(JSON.parse(localStorage.getItem('inv_force_show_btn') || 'false'));
@@ -194,6 +197,124 @@ export class InvoicesComponent {
   selectedLibrary = signal('');
   selectedRegion = signal('');
   selectedCity = signal('');
+
+  onRegionChange(region: string) {
+    this.selectedRegion.set(region);
+    const cities = this.citiesList();
+    if (!cities.includes(this.selectedCity())) {
+      this.selectedCity.set('');
+    }
+    const libs = this.libraries();
+    if (!libs.includes(this.selectedLibrary())) {
+      this.selectedLibrary.set('');
+    }
+  }
+
+  onCityChange(city: string) {
+    this.selectedCity.set(city);
+    if (city) {
+      const libData = this.librariesData().find(l => l.city === city);
+      if (libData && libData.region) {
+        this.selectedRegion.set(libData.region);
+      }
+    }
+    const libs = this.libraries();
+    if (!libs.includes(this.selectedLibrary())) {
+      this.selectedLibrary.set('');
+    }
+  }
+
+  onLibraryChange(libName: string) {
+    this.selectedLibrary.set(libName);
+    if (libName) {
+      const reg = this.selectedRegion();
+      const city = this.selectedCity();
+      
+      let libData = this.librariesData().find(l => 
+        l.name === libName && 
+        (!reg || l.region === reg) && 
+        (!city || l.city === city)
+      );
+
+      if (!libData) {
+        libData = this.librariesData().find(l => l.name === libName);
+      }
+
+      if (libData) {
+        if (libData.region && !reg) this.selectedRegion.set(libData.region);
+        if (libData.city && !city) this.selectedCity.set(libData.city);
+      }
+    }
+  }
+
+  filterRegion = signal('');
+  filterCity = signal('');
+  filterLibrary = signal('');
+
+  historyCitiesList = computed(() => {
+    let libs = this.librariesData();
+    const reg = this.filterRegion();
+    if (reg) libs = libs.filter(l => l.region === reg);
+    return Array.from(new Set(libs.map(l => l.city).filter(c => !!c)));
+  });
+
+  historyLibrariesList = computed(() => {
+    let libs = this.librariesData();
+    const reg = this.filterRegion();
+    if (reg) libs = libs.filter(l => l.region === reg);
+    const city = this.filterCity();
+    if (city) libs = libs.filter(l => l.city === city);
+    return libs.map(l => l.name);
+  });
+
+  onFilterRegionChange(region: string) {
+    this.filterRegion.set(region);
+    const cities = this.historyCitiesList();
+    if (!cities.includes(this.filterCity())) {
+      this.filterCity.set('');
+    }
+    const libs = this.historyLibrariesList();
+    if (!libs.includes(this.filterLibrary())) {
+      this.filterLibrary.set('');
+    }
+  }
+
+  onFilterCityChange(city: string) {
+    this.filterCity.set(city);
+    if (city) {
+      const libData = this.librariesData().find(l => l.city === city);
+      if (libData && libData.region) {
+        this.filterRegion.set(libData.region);
+      }
+    }
+    const libs = this.historyLibrariesList();
+    if (!libs.includes(this.filterLibrary())) {
+      this.filterLibrary.set('');
+    }
+  }
+
+  onFilterLibraryChange(libName: string) {
+    this.filterLibrary.set(libName);
+    if (libName) {
+      const reg = this.filterRegion();
+      const city = this.filterCity();
+      
+      let libData = this.librariesData().find(l => 
+        l.name === libName && 
+        (!reg || l.region === reg) && 
+        (!city || l.city === city)
+      );
+
+      if (!libData) {
+        libData = this.librariesData().find(l => l.name === libName);
+      }
+
+      if (libData) {
+        if (libData.region && !reg) this.filterRegion.set(libData.region);
+        if (libData.city && !city) this.filterCity.set(libData.city);
+      }
+    }
+  }
   
   invoicesList = this.invoiceService.invoices$;
   draftItems = signal<InvoiceItem[]>([]);
@@ -261,7 +382,7 @@ export class InvoicesComponent {
       id: draft.id!,
       subject: draft.name,
       grade: draft.grade || '',
-      term: 'الأول', // default term or could add it
+      term: draft.term || this.settingsService.getCurrentTerm(),
       price: draft.price || 0,
       quantity: 100 // default or keep existing
     };
@@ -292,7 +413,7 @@ export class InvoicesComponent {
       id: Math.floor(Math.random() * 100000),
       subject: 'كتاب جديد',
       grade: 'الصف غير محدد',
-      term: 'الأول',
+      term: this.settingsService.getCurrentTerm(),
       price: 0,
       quantity: 100
     };

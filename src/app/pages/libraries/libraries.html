@@ -66,13 +66,18 @@
 
     <!-- Right Column : Library List -->
     <div [ngClass]="isCompact ? 'w-full' : 'lg:col-span-8'" class="bg-surface-primary rounded-lg shadow-sm border border-surface-container-high p-space-md" [style.order]="settingsService.sectionOrder().indexOf('lib-list')">
-      <div class="flex justify-between items-center mb-space-md border-b border-surface-container-high pb-4 cursor-pointer select-none" (click)="toggleList()">
-        <h3 class="text-xl font-semibold text-text-heading flex items-center gap-2">
+      <div class="flex justify-between items-center mb-space-md border-b border-surface-container-high pb-4 select-none">
+        <h3 class="text-xl font-semibold text-text-heading flex items-center gap-2 cursor-pointer" (click)="toggleList()">
           <span class="material-symbols-outlined text-primary">store</span> قائمة المكتبات
         </h3>
         <div class="flex items-center gap-2">
-          <span class="bg-surface-container text-on-surface text-xs font-medium px-2 py-1 rounded-full">{{ librariesList().length }} مكتبة</span>
-          <span class="material-symbols-outlined text-on-surface-variant transition-transform duration-300" [ngClass]="{'rotate-180': isListCollapsed()}">expand_more</span>
+          <button (click)="isListEditMode.set(!isListEditMode())" class="w-8 h-8 rounded-full flex items-center justify-center transition-colors" [ngClass]="isListEditMode() ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest'">
+            <span class="material-symbols-outlined text-[16px]">edit</span>
+          </button>
+          <div class="flex items-center gap-2 cursor-pointer" (click)="toggleList()">
+            <span class="bg-surface-container text-on-surface text-xs font-medium px-2 py-1 rounded-full">{{ librariesList().length }} مكتبة</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform duration-300" [ngClass]="{'rotate-180': isListCollapsed()}">expand_more</span>
+          </div>
         </div>
       </div>
       
@@ -86,8 +91,11 @@
                 <span *ngIf="!lib.logo" class="material-symbols-outlined">menu_book</span>
               </div>
               <div class="flex-1">
-                <div class="text-sm font-semibold text-text-heading flex justify-between">
-                  {{ lib.name }}
+                <div class="text-sm font-semibold text-text-heading flex justify-between items-start gap-2">
+                  <span>{{ lib.name }}</span>
+                  <button *ngIf="isListEditMode()" (click)="deleteLibraryQuick(lib, $event)" class="text-error hover:bg-error/10 w-6 h-6 rounded flex items-center justify-center transition-colors shrink-0">
+                    <span class="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
                 </div>
                 <div class="flex flex-wrap gap-2 mt-0.5">
                   <div class="text-xs text-on-surface-variant flex items-center gap-1">
@@ -130,7 +138,13 @@
 <div *ngIf="isClearanceModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 print-only-hide p-4">
   <div class="bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
     <div class="flex justify-between items-center p-5 border-b border-surface-container-high">
-      <h2 class="text-lg font-bold text-primary">مخالصة: {{ clearanceLibrary()?.name }}</h2>
+      <div class="flex items-center gap-4">
+        <h2 class="text-lg font-bold text-primary">مخالصة: {{ clearanceLibrary()?.name }}</h2>
+        <select [ngModel]="clearanceTerm()" (ngModelChange)="onClearanceTermChange($event)" class="bg-surface-container-low border border-outline-variant rounded-lg py-1.5 px-3 text-sm font-medium focus:outline-none focus:border-primary transition-colors cursor-pointer">
+          <option value="الأول">الترم الأول</option>
+          <option value="الثاني">الترم الثاني</option>
+        </select>
+      </div>
       <button (click)="closeClearance()" class="text-on-surface-variant hover:text-error transition-colors">
         <span class="material-symbols-outlined">close</span>
       </button>
@@ -194,7 +208,7 @@
     <div class="absolute right-0 top-6 text-[#4a148c] font-bold text-[16px]">
       سلسلة تدريبات كامبريدج في الفيزياء
     </div>
-    <h1 class="text-2xl font-bold text-[#d32f2f] mb-8">فاتورة رقم (1)</h1>
+    <h1 class="text-2xl font-bold text-[#d32f2f] mb-8">فاتورة رقم ({{ currentClearanceNumber() }})</h1>
   </div>
   
   <div class="flex justify-between items-center mb-2">
@@ -306,6 +320,7 @@
       <h2 class="text-lg font-bold text-primary">تفاصيل المكتبة</h2>
       <div class="flex items-center gap-2">
         <button *ngIf="!isEditingLibrary" (click)="isEditingLibrary = true" class="text-sm font-medium text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors">تعديل البيانات</button>
+        <button *ngIf="isEditingLibrary" (click)="deleteLibrary()" class="text-sm font-medium text-error hover:bg-error/10 px-3 py-1.5 rounded-lg transition-colors ml-1">حذف المكتبة</button>
         <button *ngIf="isEditingLibrary" (click)="isEditingLibrary = false; showDetails(selectedLibraryForDetails()!)" class="text-sm font-medium text-on-surface-variant hover:bg-surface-variant px-3 py-1.5 rounded-lg transition-colors">إلغاء</button>
         <button *ngIf="isEditingLibrary" (click)="saveEditedLibrary()" class="text-sm font-medium text-on-primary bg-primary hover:bg-primary-container px-3 py-1.5 rounded-lg transition-colors shadow-sm">حفظ التعديلات</button>
         <button (click)="closeDetails()" class="text-on-surface-variant hover:text-error transition-colors mr-2">
@@ -334,19 +349,23 @@
         </div>
 
         <div class="flex-1 space-y-3" *ngIf="isEditingLibrary">
-          <input [(ngModel)]="editLibName" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-sm font-bold focus:border-primary outline-none" placeholder="اسم المكتبة">
-          <input [(ngModel)]="editLibOwnerName" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" placeholder="اسم صاحب المكتبة (الفاضل / ...)">
+          <div>
+            <label class="block text-xs font-medium text-on-surface-variant mb-1">اسم المكتبة</label>
+            <input [(ngModel)]="editLibName" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-sm font-bold focus:border-primary outline-none" placeholder="اسم المكتبة">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-on-surface-variant mb-1">اسم صاحب المكتبة</label>
+            <input [(ngModel)]="editLibOwnerName" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" placeholder="اسم صاحب المكتبة (الفاضل / ...)">
+          </div>
           <div class="flex gap-2">
-            <select [(ngModel)]="editLibRegion" class="flex-1 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary outline-none">
-              <option value="منطقة الرياض">منطقة الرياض</option>
-              <option value="مكة المكرمة">مكة المكرمة</option>
-              <option value="المنطقة الشرقية">المنطقة الشرقية</option>
-            </select>
-            <select [(ngModel)]="editLibCity" class="flex-1 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary outline-none">
-              <option value="الرياض">الرياض</option>
-              <option value="جدة">جدة</option>
-              <option value="الدمام">الدمام</option>
-            </select>
+            <div class="flex-1">
+              <label class="block text-xs font-medium text-on-surface-variant mb-1">المحافظة</label>
+              <input type="text" [(ngModel)]="editLibRegion" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" placeholder="أدخل المحافظة">
+            </div>
+            <div class="flex-1">
+              <label class="block text-xs font-medium text-on-surface-variant mb-1">المدينة</label>
+              <input type="text" [(ngModel)]="editLibCity" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary outline-none" placeholder="أدخل المدينة">
+            </div>
           </div>
         </div>
       </div>

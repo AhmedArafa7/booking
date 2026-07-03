@@ -66,17 +66,27 @@
             <label class="block text-[10px] text-on-surface-variant mb-1">بيانات التواصل (الإدارة والهواتف)</label>
             <input type="text" [(ngModel)]="editPrintSettings.phones" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
           </div>
-          <div class="flex gap-2">
-            <div class="flex-1">
-              <label class="block text-[10px] text-on-surface-variant mb-1">العملة الأساسية (مثال: R.O. أو ج.م)</label>
-              <input type="text" [(ngModel)]="editPrintSettings.mainCurrency" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
+            <div class="flex gap-2">
+              <div class="flex-1">
+                <label class="block text-[10px] text-on-surface-variant mb-1">العملة الأساسية (مثال: R.O. أو ج.م)</label>
+                <input type="text" [(ngModel)]="editPrintSettings.mainCurrency" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
+              </div>
+              <div class="flex-1">
+                <label class="block text-[10px] text-on-surface-variant mb-1">العملة الفرعية (مثال: Bz أو قرش)</label>
+                <input type="text" [(ngModel)]="editPrintSettings.subCurrency" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
+              </div>
             </div>
-            <div class="flex-1">
-              <label class="block text-[10px] text-on-surface-variant mb-1">العملة الفرعية (مثال: Bz أو قرش)</label>
-              <input type="text" [(ngModel)]="editPrintSettings.subCurrency" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
+            <div class="flex gap-2">
+              <div class="flex-1">
+                <label class="block text-[10px] text-on-surface-variant mb-1">بداية الترم الأول</label>
+                <input type="date" [(ngModel)]="editPrintSettings.term1Start" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
+              </div>
+              <div class="flex-1">
+                <label class="block text-[10px] text-on-surface-variant mb-1">بداية الترم الثاني</label>
+                <input type="date" [(ngModel)]="editPrintSettings.term2Start" class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-xs focus:border-primary outline-none">
+              </div>
             </div>
           </div>
-        </div>
       </div>
 
       <div class="pt-2 mt-2 border-t border-surface-container-high">
@@ -143,7 +153,7 @@
               <span class="material-symbols-outlined text-[14px] text-on-surface-variant">store</span>
             </div>
             <h4 class="font-bold text-text-heading text-sm">إضافة المكتبات</h4>
-            <p class="text-xs text-on-surface-variant mt-1 leading-relaxed">الخطوة الأولى طبيعياً هي إضافة وتعريف جميع المكتبات التي تتعامل معها. يمكنك إضافة بيانات المكتبة، المحافظة، وساعات العمل.</p>
+            <p class="text-xs text-on-surface-variant mt-1 leading-relaxed">الخطوة الأولى طبيعياً هي إضافة وتعريف جميع المكتبات التي تتعامل معها. يمكنك إضافة بيانات المكتبة، المحافظة، المدينه، اسم المكتبه، اسم صاحبها لكتابته تلقائيا فى الفواتير التى يتم ارسالها لها، ساعات العمل كمرجع لتجنب ارسال الكتب.</p>
           </div>
 
           <div class="relative pr-8">
