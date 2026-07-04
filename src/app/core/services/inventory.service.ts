@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, of, tap } from 'rxjs';
 import { InventoryItem } from '../models/inventory.model';
 import { environment } from '../../../environments/environment';
+import { SyncService } from './sync.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ export class InventoryService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/inventory`;
   private readonly storageKey = 'inventory'; // Assuming 'inventory' was the old key
+  private syncService = inject(SyncService);
 
   private inventorySubject = new BehaviorSubject<InventoryItem[]>(this.loadFromStorage());
   public inventory$ = this.inventorySubject.asObservable();
@@ -30,6 +32,7 @@ export class InventoryService {
 
   private saveToStorage(data: InventoryItem[]): void {
     localStorage.setItem(this.storageKey, JSON.stringify(data));
+    this.syncService.queueSync();
   }
 
   fetchInventory(): void {

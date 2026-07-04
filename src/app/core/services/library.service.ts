@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, of, tap } from 'rxjs';
 import { Library } from '../models/library.model';
 import { environment } from '../../../environments/environment';
+import { SyncService } from './sync.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ export class LibraryService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/libraries`;
   private readonly storageKey = 'libraries'; 
+  private syncService = inject(SyncService);
 
   private librariesSubject = new BehaviorSubject<Library[]>(this.loadFromStorage());
   public libraries$ = this.librariesSubject.asObservable();
@@ -26,6 +28,7 @@ export class LibraryService {
 
   private saveToStorage(data: Library[]): void {
     localStorage.setItem(this.storageKey, JSON.stringify(data));
+    this.syncService.queueSync();
   }
 
   addLibrary(lib: Library) {

@@ -1,10 +1,12 @@
 import { Injectable, signal } from '@angular/core';
 import { Invoice } from '../models/invoice.model';
+import { SyncService } from './sync.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InvoiceService {
+  private syncService = inject(SyncService);
   private invoicesSignal = signal<Invoice[]>([]);
   public readonly invoices$ = this.invoicesSignal.asReadonly();
 
@@ -27,6 +29,7 @@ export class InvoiceService {
         this.invoicesSignal.set(parsed);
         if (needsSave) {
           localStorage.setItem('invoices', JSON.stringify(parsed));
+          this.syncService.queueSync();
         }
       } catch (e) {
         this.invoicesSignal.set([]);
@@ -49,6 +52,7 @@ export class InvoiceService {
     const updated = [...this.invoicesSignal(), invoice];
     this.invoicesSignal.set(updated);
     localStorage.setItem('invoices', JSON.stringify(updated));
+    this.syncService.queueSync();
   }
 
   getInvoicesByLibrary(libraryName: string): Invoice[] {
@@ -59,5 +63,6 @@ export class InvoiceService {
     const updated = this.invoicesSignal().map(inv => inv.id === updatedInvoice.id ? updatedInvoice : inv);
     this.invoicesSignal.set(updated);
     localStorage.setItem('invoices', JSON.stringify(updated));
+    this.syncService.queueSync();
   }
 }

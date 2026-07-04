@@ -2,6 +2,7 @@ import { Injectable, signal, inject } from '@angular/core';
 import { Activity } from '../models/activity.model';
 import { InventoryService } from './inventory.service';
 import { LibraryService } from './library.service';
+import { SyncService } from './sync.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +13,7 @@ export class ActivityService {
   private readonly storageKey = 'activity_log';
   private inventoryService = inject(InventoryService);
   private libraryService = inject(LibraryService);
+  private syncService = inject(SyncService);
 
   constructor() {
     this.loadActivities(); 
@@ -42,6 +44,7 @@ export class ActivityService {
     const updated = [newActivity, ...this.activitiesSignal()];
     this.activitiesSignal.set(updated);
     localStorage.setItem(this.storageKey, JSON.stringify(updated));
+    this.syncService.queueSync();
   }
 
   undoActivity(activityId: string) {
@@ -64,6 +67,7 @@ export class ActivityService {
       updated[index] = { ...activity, status: 'undone' };
       this.activitiesSignal.set(updated);
       localStorage.setItem(this.storageKey, JSON.stringify(updated));
+      this.syncService.queueSync();
     }
   }
 
@@ -87,11 +91,13 @@ export class ActivityService {
       updated[index] = { ...activity, status: 'active' };
       this.activitiesSignal.set(updated);
       localStorage.setItem(this.storageKey, JSON.stringify(updated));
+      this.syncService.queueSync();
     }
   }
 
   clearHistory() {
     this.activitiesSignal.set([]);
     localStorage.removeItem(this.storageKey);
+    this.syncService.queueSync();
   }
 }

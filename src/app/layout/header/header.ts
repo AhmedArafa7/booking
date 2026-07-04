@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ThemeService } from '../../core/services/theme.service';
 import { SettingsService, PrintSettings } from '../../core/services/settings.service';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -25,6 +26,16 @@ export class HeaderComponent {
 
   get isSinglePageMode(): boolean {
     return this.router.url === '/single-page';
+  }
+
+  get googleSheetUrl(): string {
+    return environment.googleSheets?.sheetUrl || '';
+  }
+
+  get googleSheetDownloadUrl(): string {
+    return environment.googleSheets?.sheetId 
+      ? `https://docs.google.com/spreadsheets/d/${environment.googleSheets.sheetId}/export?format=xlsx` 
+      : '';
   }
 
   openHelp() {
