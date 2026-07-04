@@ -232,6 +232,9 @@
                     </ng-container>
                   </div>
                 </div>
+                <button (click)="deleteInvoice(inv)" class="text-error hover:bg-error-container p-1.5 rounded-lg transition-colors flex items-center justify-center bg-surface-container-low border border-error/20" title="إلغاء الفاتورة بالكامل واسترجاع الكميات">
+                  <span class="material-symbols-outlined text-[20px]">delete</span>
+                </button>
               </div>
 
               <!-- Items List (Super Compact) -->
@@ -374,6 +377,9 @@
                   </ng-container>
                 </div>
               </div>
+              <button (click)="deleteInvoice(inv)" class="text-error hover:bg-error-container p-1.5 rounded-lg transition-colors flex items-center justify-center bg-surface-container-low border border-error/20" title="إلغاء الفاتورة بالكامل واسترجاع الكميات">
+                <span class="material-symbols-outlined text-[20px]">delete</span>
+              </button>
             </div>
 
             <!-- Items List (Super Compact) -->

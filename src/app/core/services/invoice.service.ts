@@ -65,4 +65,11 @@ export class InvoiceService {
     localStorage.setItem('invoices', JSON.stringify(updated));
     this.syncService.queueSync();
   }
+
+  deleteInvoice(id: string) {
+    const updated = this.invoicesSignal().filter(inv => inv.id !== id);
+    this.invoicesSignal.set(updated);
+    localStorage.setItem('invoices', JSON.stringify(updated));
+    this.syncService.queueSync();
+  }
 }

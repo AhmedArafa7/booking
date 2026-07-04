@@ -530,6 +530,29 @@ export class InvoicesComponent {
     this.printInvoice(invoice);
   }
 
+  deleteInvoice(invoice: Invoice) {
+    if (!confirm(`هل أنت متأكد من رغبتك في حذف الفاتورة رقم ${invoice.invoiceNumber}؟ سيتم استرجاع الكميات للمخزون.`)) {
+      return;
+    }
+
+    // Reverse inventory deduction/addition
+    for (const item of invoice.items) {
+      const invItem = this.inventoryService.getItemById(item.id!);
+      if (invItem) {
+        if (invoice.type === 'order') {
+          invItem.quantity += (item.quantity || 0); // Reverse order
+        } else {
+          invItem.quantity -= (item.quantity || 0); // Reverse refund
+        }
+        this.inventoryService.updateInventoryItem(invItem);
+      }
+    }
+
+    this.invoiceService.deleteInvoice(invoice.id!);
+    this.activityService.logActivity('حذف فاتورة', `تم حذف الفاتورة رقم ${invoice.invoiceNumber} واسترجاع كمياتها`, 'DELETE', { invoice });
+    this.toast.show('تم حذف الفاتورة واسترجاع كميات الكتب بنجاح', 'success');
+  }
+
   processInventoryAdd() {
     const invalidItems = this.draftItems().filter(i => (i.quantity || 0) < 0);
     if (invalidItems.length > 0) {

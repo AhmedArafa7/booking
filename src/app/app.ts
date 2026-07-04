@@ -8,6 +8,7 @@ import { filter, take } from 'rxjs/operators';
 import { SettingsService } from './core/services/settings.service';
 import { InventoryService } from './core/services/inventory.service';
 import { ActivityService } from './core/services/activity.service';
+import { SyncService } from './core/services/sync.service';
 
 @Component({
   selector: 'app-root',
@@ -24,6 +25,7 @@ export class App {
   private settingsService = inject(SettingsService);
   private inventoryService = inject(InventoryService);
   private activityService = inject(ActivityService);
+  private syncService = inject(SyncService);
 
   isSinglePageMode = signal(false);
   isLoginPage = signal(false);
@@ -38,6 +40,9 @@ export class App {
     });
 
     this.checkAndAutoDeleteOldTermBooks();
+    
+    // Check for new data from other devices
+    this.syncService.startupCheck();
   }
 
   private checkAndAutoDeleteOldTermBooks() {
