@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { Invoice } from '../models/invoice.model';
 import { SyncService } from './sync.service';
 
